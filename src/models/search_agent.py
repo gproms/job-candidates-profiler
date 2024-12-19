@@ -56,6 +56,7 @@ client = OpenAI(api_key=api_key)
 def interpret_query(query, profiles):
     """
     Use GPT-4o to interpret the search query and suggest filtering criteria.
+    Supports complex queries with logical operators.
     """
     prompt_template = """
     You are a helpful assistant for a recruiter platform. Interpret the following search query:
@@ -67,8 +68,9 @@ def interpret_query(query, profiles):
 
     Return the filtering criteria in JSON format. Example:
     {{
-      "skills": ["Python", "Machine Learning"],
-      "experience_years_min": 3
+      "skills": ["Python", "TensorFlow"],
+      "experience_years_min": 5,
+      "education": ["MSc"]
     }}
     """
     # Prepare the prompt
@@ -120,6 +122,12 @@ def filter_profiles(profiles, criteria):
             cv_experience = profile["experience"]["cv"]
             total_years = sum(int(exp["Duration"].split()[0]) for exp in cv_experience if "Duration" in exp)
             if total_years < criteria["experience_years_min"]:
+                continue
+
+        # Check education
+        if "education" in criteria:
+            profile_education = [edu["Degree"] for edu in profile["education"]]
+            if not any(edu in profile_education for edu in criteria["education"]):
                 continue
 
         # Add profile to results if all conditions pass
