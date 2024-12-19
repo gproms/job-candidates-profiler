@@ -56,7 +56,7 @@ client = OpenAI(api_key=api_key)
 def interpret_query(query, profiles):
     """
     Use GPT-4o to interpret the search query and suggest filtering criteria.
-    Supports complex queries with logical operators.
+    Supports logical operators, percentages, and minimum matches.
     """
     prompt_template = """
     You are a helpful assistant for a recruiter platform. Interpret the following search query:
@@ -69,9 +69,13 @@ def interpret_query(query, profiles):
     Return the filtering criteria in JSON format. Example:
     {{
       "skills": ["Python", "TensorFlow"],
+      "skill_match": "all",  # Options: "all", "any", integer (min count), float (min percentage)
       "experience_years_min": 5,
-      "education": ["MSc"]
+      "education": ["MSc"],
+      "logic": "and"  # Options: "and", "or"
     }}
+
+    Ensure the JSON output does not include comments.
     """
     # Prepare the prompt
     prompt = prompt_template.format(query=query, profiles=json.dumps(profiles, indent=2))
@@ -96,6 +100,9 @@ def interpret_query(query, profiles):
         json_start = raw_content.index("```json") + len("```json")
         json_end = raw_content.index("```", json_start)
         json_content = raw_content[json_start:json_end].strip()
+
+        # Remove comments from JSON block
+        json_content = "\n".join(line for line in json_content.split("\n") if not line.strip().startswith("#"))
         try:
             return json.loads(json_content)
         except json.JSONDecodeError:
@@ -105,32 +112,91 @@ def interpret_query(query, profiles):
         return {"error": "No JSON block found in response", "raw_content": raw_content}
 
 
+# def filter_profiles(profiles, criteria):
+#     """
+#     Filter profiles based on criteria extracted from the query.
+#     Supports flexible skill matching and logical operators.
+#     """
+#     matching_profiles = []
+#
+#     for profile in profiles:
+#         # Check skills
+#         if "skills" in criteria:
+#             required_skills = criteria["skills"]
+#             profile_skills = profile["skills"]
+#
+#             # Check skill matching logic
+#             if "skill_match" in criteria:
+#                 if criteria["skill_match"] == "all":
+#                     if not all(skill in profile_skills for skill in required_skills):
+#                         continue
+#                 elif isinstance(criteria["skill_match"], int):
+#                     if sum(1 for skill in required_skills if skill in profile_skills) < criteria["skill_match"]:
+#                         continue
+#                 elif isinstance(criteria["skill_match"], float):
+#                     percentage_matched = sum(1 for skill in required_skills if skill in profile_skills) / len(required_skills)
+#                     if percentage_matched < criteria["skill_match"]:
+#                         continue
+#                 else:
+#                     if not any(skill in profile_skills for skill in required_skills):
+#                         continue
+#
+#         # Check minimum experience
+#         if "experience_years_min" in criteria:
+#             total_years = sum(
+#                 int(exp["Duration"].split()[0]) for exp in profile["experience"]["cv"] if "Duration" in exp
+#             )
+#             if total_years < criteria["experience_years_min"]:
+#                 continue
+#
+#         # Check education
+#         if "education" in criteria:
+#             profile_education = [edu["Degree"] for edu in profile["education"]]
+#             if not any(edu in profile_education for edu in criteria["education"]):
+#                 continue
+#
+#         matching_profiles.append(profile)
+#
+#     return matching_profiles
+
 def filter_profiles(profiles, criteria):
     """
     Filter profiles based on criteria extracted from the query.
+    Supports flexible skill matching and logical operators.
     """
     matching_profiles = []
 
     for profile in profiles:
+        print(f"\nChecking profile: {profile['name']}")  # Debug: Show profile being checked
+
+        # Initialize a flag for the OR logic
+        matches = []
+
         # Check skills
         if "skills" in criteria:
-            if not any(skill in profile["skills"] for skill in criteria["skills"]):
-                continue
-
-        # Check minimum experience
-        if "experience_years_min" in criteria:
-            cv_experience = profile["experience"]["cv"]
-            total_years = sum(int(exp["Duration"].split()[0]) for exp in cv_experience if "Duration" in exp)
-            if total_years < criteria["experience_years_min"]:
-                continue
+            required_skills = criteria["skills"]
+            profile_skills = profile["skills"]
+            skill_match = all(skill in profile_skills for skill in required_skills)  # AND logic for skills
+            matches.append(skill_match)
+            print(f"  Skill Match: {skill_match}")  # Debug: Skill match result
 
         # Check education
         if "education" in criteria:
+            required_education = criteria["education"]
             profile_education = [edu["Degree"] for edu in profile["education"]]
-            if not any(edu in profile_education for edu in criteria["education"]):
-                continue
+            education_match = any(edu in profile_education for edu in required_education)
+            matches.append(education_match)
+            print(f"  Education Match: {education_match}")  # Debug: Education match result
 
-        # Add profile to results if all conditions pass
-        matching_profiles.append(profile)
+        # Apply OR logic: Pass if any condition is True
+        if "logic" in criteria and criteria["logic"] == "or":
+            if any(matches):
+                print("  Profile matches based on OR logic.")  # Debug: Profile matched
+                matching_profiles.append(profile)
+        else:  # Default to AND logic
+            if all(matches):
+                print("  Profile matches based on AND logic.")  # Debug: Profile matched
+                matching_profiles.append(profile)
 
     return matching_profiles
+

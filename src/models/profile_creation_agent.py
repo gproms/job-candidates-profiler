@@ -4,8 +4,6 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from search_agent import interpret_query, filter_profiles
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -47,16 +45,9 @@ def extract_data_from_text(text, prompt_template):
     # Get the raw content
     raw_content = completion.choices[0].message.content
 
-    # try:
-        # Remove code block markers and parse JSON
     cleaned_content = raw_content.replace("```json", "").replace("```", "").strip()
     return json.loads(cleaned_content)
-    # except json.JSONDecodeError:
-    #     # Handle invalid JSON formats by returning raw content
-    #     return {
-    #         "error": "Invalid JSON format",
-    #         "raw_content": raw_content
-    #     }
+
 
 
 def consolidate_data_with_ai(cv_text, linkedin_data, interview_text):
@@ -124,29 +115,4 @@ def create_profiles_with_ai(data_dir):
         profiles.append(profile)
 
     return profiles
-
-
-if __name__ == "__main__":
-    # Path to the data directory
-    data_directory = os.path.join("..", "..", "data")
-
-    # Generate unified profiles
-    profiles = create_profiles_with_ai(data_directory)
-
-    # Example queries
-    queries = [
-        "Find candidates with Python or TensorFlow skills and 1+ years of experience.",
-        "Show profiles with an MSc degree in Data Science."
-    ]
-
-    for query in queries:
-        print(f"\nQuery: {query}")
-        criteria = interpret_query(query, profiles)
-
-        if "error" not in criteria:
-            matching_profiles = filter_profiles(profiles, criteria)
-            print("\nMatching Profiles:")
-            print(json.dumps(matching_profiles, indent=4))
-        else:
-            print("Failed to interpret query:", criteria["raw_content"])
 
