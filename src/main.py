@@ -19,29 +19,41 @@ def list_files_in_s3(bucket_name, prefix="data/"):
     ]
 
 
-def download_data_from_s3(bucket_name, files):
+def download_data_from_s3(bucket_name, keys):
     """
     Downloads required data files from S3 to /tmp.
+
+    Args:
+    - bucket_name: The name of the S3 bucket.
+    - keys: List of S3 keys to download.
     """
     s3 = boto3.client('s3')
-    for file in files:
-        local_path = f"/tmp/{file}"
+
+    for key in keys: # keys are just s3 files
+        local_path = f"/tmp/{os.path.basename(key)}"  # Extract file name from the key
+
         if not os.path.exists(local_path):  # Avoid redundant downloads
-            s3.download_file(bucket_name, file, local_path)
+            try:
+                s3.download_file(bucket_name, key, local_path)
+                print(f"Downloaded {key} from {bucket_name} to {local_path}")
+            except Exception as e:
+                print(f"Failed to download {key}: {e}")
 
 
-def process_query(query, bucket_name="faangai-data"):
+def process_query(query, bucket_name="faangai-data", local=False):
     """
-    Core logic for processing a query. Reusable by both main() and lambda_handler.
+    Core logic for processing a query.
     """
-    # Dynamically list files in S3
-    data_files = list_files_in_s3(bucket_name)
+    if local:
+        # Use local data directory
+        data_directory = "data"
+    else:
+        # Dynamically list files in S3
+        data_files = list_files_in_s3(bucket_name)
+        download_data_from_s3(bucket_name, data_files)
+        data_directory = "/tmp"
 
-    # Download files to /tmp
-    download_data_from_s3(bucket_name, data_files)
-
-    # Read data from /tmp
-    data_directory = "/tmp"
+    # Read data and process
     profiles = create_profiles_with_ai(data_directory)
     criteria = interpret_query(query, profiles)
 
@@ -75,7 +87,7 @@ def main():
     query = "Find candidates with Python and TensorFlow skills OR a BSc degree in Software Engineering"
 
     # Run the query and display results
-    result = process_query(query)
+    result = process_query(query, local=True)  # Use local=True for testing
     print("\nQuery Results:")
     print(json.dumps(result, indent=4))
 
