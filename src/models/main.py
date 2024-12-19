@@ -6,13 +6,17 @@ from src.models.profile_creation_agent import create_profiles_with_ai
 from src.models.search_agent import interpret_query, filter_profiles
 
 
-def list_files_in_s3(bucket_name, prefix=""):
+def list_files_in_s3(bucket_name, prefix="data/"):
     """
-    List files in an S3 bucket with an optional prefix.
+    List files in the S3 bucket while excluding unnecessary files.
     """
     s3 = boto3.client('s3')
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-    return [item['Key'] for item in response.get('Contents', [])]
+    return [
+        item['Key']
+        for item in response.get('Contents', [])
+        if not item['Key'].endswith('.zip')  # Ignore zip files
+    ]
 
 
 def download_data_from_s3(bucket_name, files):
