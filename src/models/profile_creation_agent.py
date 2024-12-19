@@ -25,37 +25,6 @@ def load_json(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
 
-
-# def extract_data_from_text(text, prompt_template):
-#     """
-#     Use OpenAI GPT-4 to extract structured information from unstructured text.
-#     """
-#     prompt = prompt_template.format(text=text)
-#     response = openai.Completion.create(
-#         engine="gpt-4",
-#         prompt=prompt,
-#         max_tokens=500
-#     )
-#     return json.loads(response['choices'][0]['text'])
-
-# def extract_data_from_text(text, prompt_template):
-#     """
-#     Use OpenAI GPT-4 to extract structured information from unstructured text.
-#     """
-#     prompt = prompt_template.format(text=text)
-#     response = openai.ChatCompletion.create(
-#         model="gpt-4",
-#         messages=[
-#             {"role": "system", "content": "You are a helpful assistant that extracts structured data from unstructured text."},
-#             {"role": "user", "content": prompt}
-#         ],
-#         max_tokens=500
-#     )
-#     return json.loads(response['choices'][0]['message']['content'])
-
-# Initialize the OpenAI client
-client = OpenAI()
-
 def extract_data_from_text(text, prompt_template):
     """
     Use OpenAI GPT-4 to extract structured information from unstructured text.
@@ -71,7 +40,7 @@ def extract_data_from_text(text, prompt_template):
         temperature=0  # Adjust temperature for deterministic outputs
     )
     # Parse and return the JSON content from the assistant's message
-    return json.loads(response.choices[0].message["content"])
+    return json.loads(response.choices[0].message.content)
 
 
 def consolidate_data_with_ai(cv_text, linkedin_data, interview_text):
