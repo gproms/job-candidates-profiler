@@ -112,57 +112,10 @@ def interpret_query(query, profiles):
         return {"error": "No JSON block found in response", "raw_content": raw_content}
 
 
-# def filter_profiles(profiles, criteria):
-#     """
-#     Filter profiles based on criteria extracted from the query.
-#     Supports flexible skill matching and logical operators.
-#     """
-#     matching_profiles = []
-#
-#     for profile in profiles:
-#         # Check skills
-#         if "skills" in criteria:
-#             required_skills = criteria["skills"]
-#             profile_skills = profile["skills"]
-#
-#             # Check skill matching logic
-#             if "skill_match" in criteria:
-#                 if criteria["skill_match"] == "all":
-#                     if not all(skill in profile_skills for skill in required_skills):
-#                         continue
-#                 elif isinstance(criteria["skill_match"], int):
-#                     if sum(1 for skill in required_skills if skill in profile_skills) < criteria["skill_match"]:
-#                         continue
-#                 elif isinstance(criteria["skill_match"], float):
-#                     percentage_matched = sum(1 for skill in required_skills if skill in profile_skills) / len(required_skills)
-#                     if percentage_matched < criteria["skill_match"]:
-#                         continue
-#                 else:
-#                     if not any(skill in profile_skills for skill in required_skills):
-#                         continue
-#
-#         # Check minimum experience
-#         if "experience_years_min" in criteria:
-#             total_years = sum(
-#                 int(exp["Duration"].split()[0]) for exp in profile["experience"]["cv"] if "Duration" in exp
-#             )
-#             if total_years < criteria["experience_years_min"]:
-#                 continue
-#
-#         # Check education
-#         if "education" in criteria:
-#             profile_education = [edu["Degree"] for edu in profile["education"]]
-#             if not any(edu in profile_education for edu in criteria["education"]):
-#                 continue
-#
-#         matching_profiles.append(profile)
-#
-#     return matching_profiles
-
 def filter_profiles(profiles, criteria):
     """
     Filter profiles based on criteria extracted from the query.
-    Supports flexible skill matching and logical operators.
+    Supports flexible skill matching, percentages, absolute counts, and logical operators.
     """
     matching_profiles = []
 
@@ -176,7 +129,21 @@ def filter_profiles(profiles, criteria):
         if "skills" in criteria:
             required_skills = criteria["skills"]
             profile_skills = profile["skills"]
-            skill_match = all(skill in profile_skills for skill in required_skills)  # AND logic for skills
+
+            # Check skill matching logic
+            if "skill_match" in criteria:
+                if criteria["skill_match"] == "all":
+                    skill_match = all(skill in profile_skills for skill in required_skills)
+                elif isinstance(criteria["skill_match"], int):
+                    skill_match = sum(1 for skill in required_skills if skill in profile_skills) >= criteria["skill_match"]
+                elif isinstance(criteria["skill_match"], float):
+                    percentage_matched = sum(1 for skill in required_skills if skill in profile_skills) / len(required_skills)
+                    skill_match = percentage_matched >= criteria["skill_match"]
+                else:  # Default to "any" logic
+                    skill_match = any(skill in profile_skills for skill in required_skills)
+            else:  # Default to "any" logic if no specific match logic is given
+                skill_match = any(skill in profile_skills for skill in required_skills)
+
             matches.append(skill_match)
             print(f"  Skill Match: {skill_match}")  # Debug: Skill match result
 
@@ -188,7 +155,16 @@ def filter_profiles(profiles, criteria):
             matches.append(education_match)
             print(f"  Education Match: {education_match}")  # Debug: Education match result
 
-        # Apply OR logic: Pass if any condition is True
+        # Check minimum experience
+        if "experience_years_min" in criteria:
+            total_years = sum(
+                int(exp["Duration"].split()[0]) for exp in profile["experience"]["cv"] if "Duration" in exp
+            )
+            experience_match = total_years >= criteria["experience_years_min"]
+            matches.append(experience_match)
+            print(f"  Experience Match: {experience_match}")  # Debug: Experience match result
+
+        # Apply logic (AND/OR)
         if "logic" in criteria and criteria["logic"] == "or":
             if any(matches):
                 print("  Profile matches based on OR logic.")  # Debug: Profile matched
