@@ -1,7 +1,10 @@
-from openai import OpenAI
-from dotenv import load_dotenv
 import json
 import os
+
+from openai import OpenAI
+from dotenv import load_dotenv
+
+from search_agent import interpret_query, filter_profiles
 
 # Load environment variables from .env file
 load_dotenv()
@@ -131,5 +134,17 @@ if __name__ == "__main__":
     profiles = create_profiles_with_ai(data_directory)
 
     # Print consolidated profiles for verification
+    print("Generated Profiles:")
     for profile in profiles:
         print(json.dumps(profile, indent=4))
+
+    # Example query for the Search Agent
+    query = "Find profiles with 1+ years of experience in Python."
+    criteria = interpret_query(query, profiles)
+
+    if "error" not in criteria:
+        matching_profiles = filter_profiles(profiles, criteria)
+        print("\nMatching Profiles:")
+        print(json.dumps(matching_profiles, indent=4))
+    else:
+        print("Failed to interpret query:", criteria["raw_content"])
