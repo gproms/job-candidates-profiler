@@ -133,18 +133,20 @@ if __name__ == "__main__":
     # Generate unified profiles
     profiles = create_profiles_with_ai(data_directory)
 
-    # Print consolidated profiles for verification
-    print("Generated Profiles:")
-    for profile in profiles:
-        print(json.dumps(profile, indent=4))
+    # Example queries
+    queries = [
+        "Find candidates with Python or TensorFlow skills and 1+ years of experience.",
+        "Show profiles with an MSc degree in Data Science."
+    ]
 
-    # Example query for the Search Agent
-    query = "Find profiles with 1+ years of experience in Python."
-    criteria = interpret_query(query, profiles)
+    for query in queries:
+        print(f"\nQuery: {query}")
+        criteria = interpret_query(query, profiles)
 
-    if "error" not in criteria:
-        matching_profiles = filter_profiles(profiles, criteria)
-        print("\nMatching Profiles:")
-        print(json.dumps(matching_profiles, indent=4))
-    else:
-        print("Failed to interpret query:", criteria["raw_content"])
+        if "error" not in criteria:
+            matching_profiles = filter_profiles(profiles, criteria)
+            print("\nMatching Profiles:")
+            print(json.dumps(matching_profiles, indent=4))
+        else:
+            print("Failed to interpret query:", criteria["raw_content"])
+
