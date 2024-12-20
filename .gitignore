@@ -1,17 +1,22 @@
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *.so
+*.pyc
+*.pyo
 
-# Virtual Environment
+# Virtual environment
 venv/
 
-# Environment Variables
+# Environment variables
 .env
 
-# Jupyter Notebooks
+# Jupyter notebooks
 .ipynb_checkpoints/
 
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Local data files
+data/
