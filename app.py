@@ -23,7 +23,7 @@ def query_lambda(query):
         return {"error": str(e)}
 
 # Streamlit App
-st.title("FAANG AI Candidate Search")
+st.title("Candidate Search")
 st.subheader("Search Profiles Based on Your Query")
 
 query = st.text_input("Enter your search query:", value="Find candidates with Python and TensorFlow skills OR a BSc degree in Software Engineering")
