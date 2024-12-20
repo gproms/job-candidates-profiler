@@ -1,6 +1,10 @@
 import streamlit as st
 import boto3
 import json
+import os
+
+# Dynamically set the Streamlit server port
+port = int(os.getenv("PORT", 8501))  # Default to 8501 if PORT is not set
 
 # AWS Lambda setup
 LAMBDA_FUNCTION_NAME = "faangai-query-handler"
