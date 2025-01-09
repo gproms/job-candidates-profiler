@@ -32,7 +32,7 @@ def extract_data_from_text(text, prompt_template):
     """
     prompt = prompt_template.format(text=text)
     completion = client.chat.completions.create(
-        model="gpt-4o",  # Use the available model
+        model="gpt-4o",
         messages=[
             {"role": "system",
              "content": "You are a helpful assistant that extracts structured data from unstructured text."},
@@ -102,7 +102,7 @@ def create_profiles_with_ai(data_dir):
     linkedin_data = load_json(os.path.join(data_dir, "linkedin_profiles.json"))
 
     # Loop through CVs and corresponding interview files
-    for i in range(1, 6):  # Assuming 5 individuals
+    for i in range(1, 6):  # Assuming 5 individuals. This doesn't need to be hardcoded
         cv_file = os.path.join(data_dir, f"cv_{i}.txt")
         interview_file = os.path.join(data_dir, f"interview_{i}.txt")
 

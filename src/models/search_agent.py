@@ -82,7 +82,7 @@ def interpret_query(query, profiles):
 
     # Call GPT
     completion = client.chat.completions.create(
-        model="gpt-4o",  # Use the available model
+        model="gpt-4o",
         messages=[
             {"role": "system",
              "content": "You are a helpful assistant that interprets search queries for a recruiter platform."},
@@ -162,16 +162,16 @@ def filter_profiles(profiles, criteria):
             )
             experience_match = total_years >= criteria["experience_years_min"]
             matches.append(experience_match)
-            print(f"  Experience Match: {experience_match}")  # Debug: Experience match result
+            print(f"  Experience Match: {experience_match}")
 
         # Apply logic (AND/OR)
         if "logic" in criteria and criteria["logic"] == "or":
             if any(matches):
-                print("  Profile matches based on OR logic.")  # Debug: Profile matched
+                print("  Profile matches based on OR logic.")
                 matching_profiles.append(profile)
         else:  # Default to AND logic
             if all(matches):
-                print("  Profile matches based on AND logic.")  # Debug: Profile matched
+                print("  Profile matches based on AND logic.")
                 matching_profiles.append(profile)
 
     return matching_profiles
